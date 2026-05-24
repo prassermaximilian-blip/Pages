@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Pages</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --bg:#f7f5f0;--surface:#fff;--surface2:#f0ede6;--border:#e0dbd0;
+  --text:#1a1714;--text2:#6b6560;--text3:#9e9890;
+  --accent:#2c5f2e;--accent-light:#e8f0e9;--danger:#c0392b;
+  --shadow:0 2px 12px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.14);
+  --radius:10px;--radius-lg:16px;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#141210;--surface:#1e1c19;--surface2:#28251f;--border:#353028;
+  --text:#f0ede6;--text2:#9e9890;--text3:#6b6560;
+  --accent:#5a9b5c;--accent-light:#1a2b1a;--danger:#e05c4b;
+  --shadow:0 2px 12px rgba(0,0,0,.35);--shadow-lg:0 8px 32px rgba(0,0,0,.55);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);
+     display:flex;height:100vh;overflow:hidden;transition:background .2s,color .2s}
+
+/* ── Sidebar ── */
+#sidebar{width:280px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);
+         display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:background .2s,border-color .2s}
+#sidebar-header{padding:20px 20px 14px;border-bottom:1px solid var(--border);
+                display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wordmark{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.5px}
+.wordmark span{color:var(--accent)}
+.icon-btn{background:none;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;
+          display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);
+          font-size:15px;transition:background .15s,color .15s,border-color .15s;flex-shrink:0}
+.icon-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--text3)}
+.icon-btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.icon-btn.accent:hover{opacity:.85}
+#search-wrap{padding:12px 14px;border-bottom:1px solid var(--border);position:relative}
+#search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+        padding:8px 12px 8px 34px;font-family:var(--font-body);font-size:13.5px;color:var(--text);
+        outline:none;transition:border-color .15s,background .2s}
+#search::placeholder{color:var(--text3)}
+#search:focus{border-color:var(--accent);background:var(--surface)}
+.search-icon{position:absolute;left:24px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+#pages-list{flex:1;overflow-y:auto;padding:8px 0;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.page-item{padding:11px 18px;cursor:pointer;border-left:3px solid transparent;
+           transition:background .12s,border-color .12s;position:relative}
+.page-item:hover{background:var(--surface2)}
+.page-item.active{background:var(--accent-light);border-left-color:var(--accent)}
+.page-item-title{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.page-item-meta{font-size:11.5px;color:var(--text3)}
+.page-item-del{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+               color:var(--text3);cursor:pointer;font-size:13px;padding:4px;border-radius:5px;
+               opacity:0;transition:opacity .12s,color .12s;line-height:1}
+.page-item:hover .page-item-del{opacity:1}
+.page-item-del:hover{color:var(--danger)}
+#no-pages{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;line-height:1.6;display:none}
+#no-pages.visible{display:block}
+
+/* ── Main ── */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);transition:background .2s}
+#toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 16px;
+         display:flex;align-items:center;gap:5px;flex-wrap:wrap;transition:background .2s,border-color .2s}
+.tb-group{display:flex;align-items:center;gap:2px;padding-right:7px;border-right:1px solid var(--border)}
+.tb-group:last-child{border-right:none;padding-right:0;margin-left:auto}
+.tb-btn{background:none;border:none;border-radius:6px;padding:5px 7px;cursor:pointer;
+        font-family:var(--font-body);font-size:13px;color:var(--text2);display:flex;align-items:center;
+        gap:4px;transition:background .12s,color .12s;line-height:1;white-space:nowrap}
+.tb-btn:hover{background:var(--surface2);color:var(--text)}
+.tb-select{border:1px solid var(--border);border-radius:6px;padding:5px 6px;font-family:var(--font-body);
+           font-size:13px;color:var(--text);cursor:pointer;outline:none;background:var(--surface)}
+.tb-select:focus{border-color:var(--accent)}
+#color-picker{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px;background:var(--surface)}
+
+/* ── Editor ── */
+#editor-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;
+             padding:40px 24px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;background:var(--bg)}
+#page-title-input{width:100%;max-width:760px;background:none;border:none;outline:none;
+                  font-family:var(--font-display);font-size:38px;font-weight:700;color:var(--text);
+                  padding:0 0 16px;border-bottom:2px solid var(--border);margin-bottom:28px;
+                  transition:border-color .2s,color .2s}
+#page-title-input::placeholder{color:var(--text3)}
+#page-title-input:focus{border-bottom-color:var(--accent)}
+
+#editor{width:100%;max-width:760px;min-height:480px;background:var(--surface);border:1px solid var(--border);
+        border-radius:var(--radius-lg);padding:36px 44px;outline:none;font-family:var(--font-body);
+        font-size:15.5px;line-height:1.75;color:var(--text);box-shadow:var(--shadow);
+        caret-color:var(--accent);transition:background .2s,border-color .2s,color .2s;position:relative}
+#editor:focus{border-color:var(--accent)}
+#editor[contenteditable="true"]:empty:before{content:attr(data-placeholder);color:var(--text3);pointer-events:none}
+#editor h1{font-family:var(--font-display);font-size:28px;font-weight:700;margin:1.2em 0 .4em}
+#editor h2{font-family:var(--font-display);font-size:22px;font-weight:700;margin:1em 0 .4em}
+#editor h3{font-size:17px;font-weight:500;margin:.8em 0 .3em}
+#editor p{margin:.5em 0}
+#editor blockquote{border-left:3px solid var(--accent);padding-left:16px;margin:1em 0;color:var(--text2);font-style:italic}
+#editor ul,#editor ol{padding-left:24px;margin:.5em 0}
+#editor li{margin:.25em 0}
+#editor a{color:var(--accent)}
+/* ── Divider (hr-wrap) ── */
+.hr-wrap{
+  position:relative;margin:1.5em 0;
+  display:flex;align-items:center;gap:10px;
+  /* make it non-editable so the caret never lands inside it */
+  -webkit-user-select:none;user-select:none;-moz-user-select:none;
+}
+.hr-wrap hr{
+  flex:1;border:none;border-top:1px solid var(--border);margin:0;
+}
+.hr-del{
+  display:none;
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  color:var(--text3);font-size:11px;padding:2px 7px;cursor:pointer;
+  white-space:nowrap;font-family:var(--font-body);
+  transition:background .12s,color .12s,border-color .12s;flex-shrink:0;
+}
+.hr-wrap:hover .hr-del{display:inline-flex;align-items:center;gap:3px;}
+.hr-del:hover{background:var(--danger);color:#fff;border-color:var(--danger);}
+/* paragraph that sits after the divider — always writable */
+.hr-after{min-height:1.4em;outline:none;}
+#editor code{background:var(--surface2);border:1px solid var(--border);border-radius:4px;
+             padding:1px 6px;font-family:'Courier New',monospace;font-size:13.5px}
+
+/* ══════════════════════════════════════════
+   IMAGE SHELL — Firefox-safe, non-selectable
+   ══════════════════════════════════════════ */
+.img-shell{
+  display:inline-block;position:relative;line-height:0;
+  margin:4px 0;vertical-align:top;cursor:move;
+  user-select:none;-webkit-user-select:none;-moz-user-select:none;
+}
+.img-shell::before,.img-shell::after{
+  content:'\FEFF';display:inline;font-size:0;line-height:0;
+  width:0;overflow:hidden;color:transparent;pointer-events:none;
+}
+.img-shell img{
+  display:block;border-radius:8px;border:2px solid transparent;
+  transition:border-color .15s;pointer-events:none;
+  -webkit-user-drag:none;user-drag:none;max-width:100%;
+}
+.img-shell.selected img{border-color:var(--accent)}
+.img-shell .rh{
+  display:none;position:absolute;width:10px;height:10px;
+  background:#fff;border:2px solid var(--accent);border-radius:50%;z-index:10;pointer-events:all;
+}
+.img-shell.selected .rh{display:block}
+.rh.nw{top:-5px;left:-5px;cursor:nw-resize}
+.rh.ne{top:-5px;right:-5px;cursor:ne-resize}
+.rh.sw{bottom:-5px;left:-5px;cursor:sw-resize}
+.rh.se{bottom:-5px;right:-5px;cursor:se-resize}
+.rh.n{top:-5px;left:calc(50% - 5px);cursor:n-resize}
+.rh.s{bottom:-5px;left:calc(50% - 5px);cursor:s-resize}
+.rh.w{top:calc(50% - 5px);left:-5px;cursor:w-resize}
+.rh.e{top:calc(50% - 5px);right:-5px;cursor:e-resize}
+
+/* ══════════════════════════════════════════
+   SIDE-BY-SIDE LAYOUT TABLE
+   Image and text sit in adjacent <td> cells.
+   No floats, no overlaps, works everywhere.
+   ══════════════════════════════════════════ */
+.img-text-block{
+  width:100%;border-collapse:collapse;margin:12px 0;
+  border:1.5px dashed transparent;border-radius:8px;
+  transition:border-color .15s;
+}
+.img-text-block:hover,.img-text-block.focused{
+  border-color:var(--accent);
+}
+.img-text-block td{
+  vertical-align:top;padding:0;border:none;
+}
+/* image cell */
+.img-text-block .itb-img-cell{
+  width:var(--itb-img-w,220px);min-width:80px;max-width:80%;
+  padding-right:16px;
+}
+.img-text-block.img-right .itb-img-cell{
+  padding-right:0;padding-left:16px;
+}
+/* text cell */
+.img-text-block .itb-txt-cell{
+  min-width:80px;
+  outline:none;
+  font-family:var(--font-body);font-size:15.5px;line-height:1.75;color:var(--text);
+}
+.img-text-block .itb-txt-cell:empty:before{
+  content:'Type text here…';color:var(--text3);pointer-events:none;
+}
+/* column-resize handle between cells */
+.itb-col-resize{
+  width:6px;cursor:col-resize;padding:0;
+  position:relative;
+}
+.itb-col-resize::after{
+  content:'';position:absolute;top:0;left:2px;
+  width:2px;height:100%;background:var(--border);
+  border-radius:2px;opacity:0;transition:opacity .15s;
+}
+.img-text-block:hover .itb-col-resize::after,
+.img-text-block.focused .itb-col-resize::after{opacity:1}
+
+/* block-level controls overlay shown when table hovered/focused */
+.itb-controls{
+  display:none;position:absolute;top:-30px;right:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;box-shadow:var(--shadow-lg);
+  padding:3px 6px;gap:2px;align-items:center;z-index:50;
+  white-space:nowrap;
+}
+.itb-wrap{position:relative;margin:12px 0}
+.itb-wrap:hover .itb-controls,.itb-wrap.focused .itb-controls{display:flex}
+.itb-controls button{
+  background:none;border:none;border-radius:5px;padding:3px 7px;
+  cursor:pointer;font-size:12px;color:var(--text2);font-family:var(--font-body);
+  transition:background .1s,color .1s;
+}
+.itb-controls button:hover{background:var(--surface2);color:var(--text)}
+.itb-controls button.danger:hover{background:#fde8e8;color:var(--danger)}
+.itb-controls .ctl-sep{width:1px;height:14px;background:var(--border);margin:0 2px}
+
+/* ── Image floating toolbar ── */
+#img-toolbar{display:none;position:fixed;z-index:200;background:var(--surface);
+             border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);
+             padding:5px 7px;gap:3px;align-items:center;pointer-events:all}
+#img-toolbar.visible{display:flex}
+#img-toolbar button{background:none;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;
+                    font-size:13px;color:var(--text2);transition:background .12s,color .12s;
+                    white-space:nowrap;font-family:var(--font-body)}
+#img-toolbar button:hover{background:var(--surface2);color:var(--text)}
+#img-toolbar button.danger:hover{background:#fde8e8;color:var(--danger)}
+#img-toolbar .tb-sep{width:1px;height:18px;background:var(--border);margin:0 3px}
+#img-toolbar .size-input{width:52px;border:1px solid var(--border);border-radius:5px;padding:3px 5px;
+                         font-size:12px;background:var(--surface2);color:var(--text);
+                         font-family:var(--font-body);outline:none;text-align:center}
+#img-toolbar .size-input:focus{border-color:var(--accent)}
+
+/* ── Status / misc ── */
+#status-bar{width:100%;max-width:760px;display:flex;align-items:center;justify-content:space-between;
+            padding:10px 4px 0;font-size:12px;color:var(--text3)}
+.saved-badge{display:flex;align-items:center;gap:5px;color:var(--accent);font-size:12px;opacity:0;transition:opacity .4s}
+.saved-badge.show{opacity:1}
+#empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--text3)}
+#empty-state .big-icon{font-size:64px;opacity:.25}
+#empty-state h2{font-family:var(--font-display);font-size:24px;color:var(--text2);font-weight:400}
+#empty-state p{font-size:14px;max-width:320px;text-align:center;line-height:1.6}
+#empty-state button{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 22px;
+                    font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;
+                    margin-top:8px;transition:opacity .15s}
+#empty-state button:hover{opacity:.85}
+#pdf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;
+             align-items:center;justify-content:center;flex-direction:column;
+             gap:14px;color:#fff;font-family:var(--font-body);font-size:15px}
+#pdf-overlay.show{display:flex}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;
+         border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body data-theme="light">
+
+<div id="pdf-overlay"><div class="spinner"></div>Generating PDF…</div>
+
+<!-- Standalone image toolbar (for solo images not in a block) -->
+<div id="img-toolbar">
+  <span style="font-size:12px;color:var(--text3)">W:</span>
+  <input class="size-input" id="img-w-input" type="number" min="40" max="1200" step="1"/>
+  <span style="font-size:12px;color:var(--text3)">px</span>
+  <div class="tb-sep"></div>
+  <button onclick="deleteSelectedImg()">🗑 Remove</button>
+</div>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div id="sidebar-header">
+    <div class="wordmark">Pa<span>g</span>es</div>
+    <div style="display:flex;gap:6px">
+      <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+      <button class="icon-btn accent" id="new-page-btn" title="New page">＋</button>
+    </div>
+  </div>
+  <div id="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="search" type="search" placeholder="Search pages…" autocomplete="off"/>
+  </div>
+  <div id="pages-list"></div>
+  <div id="no-pages">No pages yet.<br/>Click <strong>＋</strong> to create one.</div>
+</nav>
+
+<!-- Main -->
+<div id="main">
+  <div id="empty-state">
+    <div class="big-icon">📄</div>
+    <h2>No page selected</h2>
+    <p>Create a new page or select one from the sidebar to start writing.</p>
+    <button onclick="newPage()">Create a page</button>
+  </div>
+
+  <div id="toolbar" style="display:none">
+    <div class="tb-group">
+      <select class="tb-select" id="format-block" onchange="applyBlockFormat(this.value)">
+        <option value="p">Paragraph</option>
+        <option value="h1">Heading 1</option>
+        <option value="h1-center">Heading 1 — Center</option>
+        <option value="h2">Heading 2</option>
+        <option value="h2-center">Heading 2 — Center</option>
+        <option value="h3">Heading 3</option>
+        <option value="h3-center">Heading 3 — Center</option>
+        <option value="blockquote">Quote</option>
+      </select>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" onclick="fmt('bold')"><b style="font-weight:700">B</b></button>
+      <button class="tb-btn" onclick="fmt('italic')"><i>I</i></button>
+      <button class="tb-btn" onclick="fmt('underline')"><u>U</u></button>
+      <button class="tb-btn" onclick="fmt('strikeThrough')" style="text-decoration:line-through">S</button>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" onclick="fmt('insertUnorderedList')">• List</button>
+      <button class="tb-btn" onclick="fmt('insertOrderedList')">1. List</button>
+      <button class="tb-btn" onclick="insertHR()">―</button>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" onclick="fmt('justifyLeft')">≡L</button>
+      <button class="tb-btn" onclick="fmt('justifyCenter')">≡C</button>
+      <button class="tb-btn" onclick="fmt('justifyRight')">≡R</button>
+    </div>
+    <div class="tb-group">
+      <input type="color" id="color-picker" title="Text color" value="#2c5f2e" onchange="fmt('foreColor',this.value)"/>
+      <button class="tb-btn" onclick="insertLink()">🔗 Link</button>
+      <button class="tb-btn" onclick="triggerImageUpload('solo')" title="Insert standalone image">🖼 Image</button>
+      <button class="tb-btn" onclick="triggerImageUpload('block-left')" title="Image left, text right" style="font-size:12px">🖼⬜ Side-by-side</button>
+      <input type="file" id="img-upload" accept="image/*" style="display:none" onchange="insertImage(event)"/>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" onclick="exportPDF()">📄 Export PDF</button>
+    </div>
+  </div>
+
+  <div id="editor-wrap" style="display:none">
+    <input id="page-title-input" type="text" placeholder="Page title…" oninput="onTitleInput()"/>
+    <div id="editor" contenteditable="true" data-placeholder="Start writing your page…"
+         oninput="onEditorInput()" onkeydown="onEditorKey(event)"></div>
+    <div id="status-bar">
+      <span id="word-count">0 words</span>
+      <span class="saved-badge" id="saved-badge">✓ Saved</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+//  STATE
+// ═══════════════════════════════════
+let pages=[], activeId=null, saveTimer=null, savedBadgeTimer=null;
+let selectedShell=null;
+let pendingInsertMode='solo'; // 'solo' | 'block-left' | 'block-right'
+
+// ═══════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════
+function loadPages(){
+  try{const r=localStorage.getItem('pages_app_v1');if(r)pages=JSON.parse(r);}
+  catch(e){pages=[];}
+}
+function savePages(){localStorage.setItem('pages_app_v1',JSON.stringify(pages));}
+function getPage(id){return pages.find(p=>p.id===id);}
+
+// ═══════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════
+function renderSidebar(filter=''){
+  const list=document.getElementById('pages-list');
+  const noPages=document.getElementById('no-pages');
+  const q=filter.trim().toLowerCase();
+  const filtered=q?pages.filter(p=>p.title.toLowerCase().includes(q)||(p.content||'').toLowerCase().includes(q)):pages;
+  list.innerHTML='';
+  noPages.classList.toggle('visible',filtered.length===0&&pages.length===0);
+  [...filtered].sort((a,b)=>b.updated-a.updated).forEach(p=>{
+    const item=document.createElement('div');
+    item.className='page-item'+(p.id===activeId?' active':'');
+    item.dataset.id=p.id;
+    const date=new Date(p.updated).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    const preview=stripHTML(p.content||'').slice(0,50)||'Empty page';
+    item.innerHTML=`<div class="page-item-title">${escHTML(p.title||'Untitled')}</div>
+      <div class="page-item-meta">${date} · ${escHTML(preview)}</div>
+      <button class="page-item-del" onclick="deletePage('${p.id}',event)">✕</button>`;
+    item.addEventListener('click',()=>selectPage(p.id));
+    list.appendChild(item);
+  });
+  if(filtered.length===0&&pages.length>0){
+    const m=document.createElement('div');
+    m.style.cssText='text-align:center;padding:30px 20px;color:var(--text3);font-size:13px';
+    m.textContent='No pages match your search.';
+    list.appendChild(m);
+  }
+}
+
+// ═══════════════════════════════════
+//  PAGE CRUD
+// ═══════════════════════════════════
+function newPage(){
+  const id='page_'+Date.now();
+  pages.unshift({id,title:'',content:'',updated:Date.now()});
+  savePages();selectPage(id);renderSidebar();
+  setTimeout(()=>document.getElementById('page-title-input').focus(),50);
+}
+window.newPage=newPage;
+
+function selectPage(id){
+  activeId=id;
+  const page=getPage(id);if(!page)return;
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('toolbar').style.display='flex';
+  document.getElementById('editor-wrap').style.display='flex';
+  document.getElementById('page-title-input').value=page.title||'';
+  document.getElementById('editor').innerHTML=page.content||'';
+  // Re-attach events to all image shells and ITBs loaded from storage
+  document.querySelectorAll('#editor .img-shell').forEach(s=>attachShellEvents(s));
+  document.querySelectorAll('#editor .itb-wrap').forEach(w=>attachITBEvents(w));
+  updateWordCount();
+  renderSidebar(document.getElementById('search').value);
+  document.getElementById('editor').focus();
+  deselect();
+}
+
+function deletePage(id,e){
+  e.stopPropagation();
+  if(!confirm('Delete this page?'))return;
+  pages=pages.filter(p=>p.id!==id);
+  savePages();
+  if(activeId===id){
+    activeId=null;
+    document.getElementById('empty-state').style.display='';
+    document.getElementById('toolbar').style.display='none';
+    document.getElementById('editor-wrap').style.display='none';
+    hideImgToolbar();
+  }
+  renderSidebar(document.getElementById('search').value);
+}
+
+// ═══════════════════════════════════
+//  AUTO-SAVE
+// ═══════════════════════════════════
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    const page=getPage(activeId);if(!page)return;
+    page.title=document.getElementById('page-title-input').value;
+    page.content=document.getElementById('editor').innerHTML;
+    page.updated=Date.now();
+    savePages();
+    renderSidebar(document.getElementById('search').value);
+    showSavedBadge();
+  },700);
+}
+function showSavedBadge(){
+  const b=document.getElementById('saved-badge');
+  b.classList.add('show');clearTimeout(savedBadgeTimer);
+  savedBadgeTimer=setTimeout(()=>b.classList.remove('show'),2000);
+}
+function onTitleInput(){scheduleSave();}
+function onEditorInput(){updateWordCount();scheduleSave();}
+function updateWordCount(){
+  const t=document.getElementById('editor').innerText||'';
+  const w=t.trim()?t.trim().split(/\s+/).length:0;
+  document.getElementById('word-count').textContent=w+' word'+(w!==1?'s':'');
+}
+
+// ═══════════════════════════════════
+//  FORMAT COMMANDS
+// ═══════════════════════════════════
+function fmt(cmd,val){
+  document.getElementById('editor').focus();
+  document.execCommand(cmd,false,val||null);
+}
+function applyBlockFormat(val){
+  const editor=document.getElementById('editor');
+  editor.focus();if(!val)return;
+  const centered=val.endsWith('-center');
+  const tag=centered?val.replace('-center',''):val;
+  document.execCommand('formatBlock',false,tag);
+  const sel=window.getSelection();
+  if(sel&&sel.rangeCount){
+    let node=sel.getRangeAt(0).commonAncestorContainer;
+    while(node&&node!==editor){
+      if(node.nodeType===1&&/^H[1-3]$/.test(node.tagName)){
+        node.style.textAlign=centered?'center':'';break;
+      }
+      node=node.parentNode;
+    }
+  }
+  scheduleSave();
+}
+function insertHR(){
+  const editor=document.getElementById('editor');
+  editor.focus();
+
+  // Build the divider block: [hr-wrap][after-paragraph]
+  const wrap=document.createElement('div');
+  wrap.className='hr-wrap';
+  wrap.setAttribute('contenteditable','false');
+
+  const hr=document.createElement('hr');
+  const del=document.createElement('button');
+  del.className='hr-del';
+  del.title='Remove divider';
+  del.innerHTML='✕ Remove';
+  del.addEventListener('mousedown',function(e){
+    e.preventDefault();e.stopPropagation();
+    // Move caret to the after-paragraph before removing
+    const after=wrap.nextElementSibling;
+    wrap.remove();
+    if(after){
+      const r=document.createRange();
+      r.selectNodeContents(after);r.collapse(true);
+      const s=window.getSelection();s.removeAllRanges();s.addRange(r);
+    }
+    scheduleSave();
+  });
+  wrap.appendChild(hr);wrap.appendChild(del);
+
+  // Paragraph after the divider — always writable
+  const after=document.createElement('p');
+  after.className='hr-after';
+
+  // Insert both at the cursor position
+  const sel=window.getSelection();
+  if(sel&&sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    range.collapse(false);
+    // Insert after-paragraph first so it ends up after wrap
+    range.insertNode(after);
+    range.insertNode(wrap);
+    // Place caret inside the after-paragraph
+    const r=document.createRange();
+    r.selectNodeContents(after);r.collapse(true);
+    sel.removeAllRanges();sel.addRange(r);
+  }else{
+    editor.appendChild(wrap);
+    editor.appendChild(after);
+    const r=document.createRange();
+    r.selectNodeContents(after);r.collapse(true);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(r);
+  }
+  after.focus();
+  scheduleSave();
+}
+function insertLink(){
+  const url=prompt('Enter URL:','https://');
+  if(url)document.execCommand('createLink',false,url);
+}
+function onEditorKey(e){
+  if(e.key==='Tab'){e.preventDefault();document.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');}
+  if(e.key==='Escape')deselect();
+  if((e.key==='Delete'||e.key==='Backspace')&&selectedShell){
+    const sel=window.getSelection();
+    if(sel&&sel.rangeCount===0){e.preventDefault();deleteSelectedImg();}
+  }
+
+  // Enter while caret is in hr-after or at end of a block just before an hr-wrap:
+  // ensure there's always a writable paragraph below the divider.
+  if(e.key==='Enter'){
+    const sel=window.getSelection();
+    if(!sel||!sel.rangeCount)return;
+    const node=sel.getRangeAt(0).startContainer;
+
+    // If caret is inside an hr-after paragraph at the very end, just let the
+    // browser create a new <p> — nothing to do.
+
+    // If caret is inside an hr-wrap (shouldn't happen, but guard anyway):
+    const inWrap=node.nodeType===1?node.closest('.hr-wrap'):node.parentElement&&node.parentElement.closest('.hr-wrap');
+    if(inWrap){
+      e.preventDefault();
+      let after=inWrap.nextElementSibling;
+      if(!after||after.classList.contains('hr-wrap')){
+        after=document.createElement('p');
+        inWrap.parentNode.insertBefore(after,inWrap.nextSibling);
+      }
+      const r=document.createRange();
+      r.selectNodeContents(after);r.collapse(true);
+      sel.removeAllRanges();sel.addRange(r);
+    }
+  }
+
+  // Backspace: don't let the caret eat the hr-wrap from above
+  if(e.key==='Backspace'){
+    const sel=window.getSelection();
+    if(!sel||!sel.rangeCount)return;
+    const range=sel.getRangeAt(0);
+    if(!range.collapsed)return;
+    // If caret is at offset 0 of an element right after an hr-wrap, prevent default
+    // (browser would try to merge with the non-editable hr-wrap)
+    if(range.startOffset===0){
+      const container=range.startContainer;
+      const el=container.nodeType===3?container.parentElement:container;
+      const prev=el&&el.previousElementSibling;
+      if(prev&&prev.classList&&prev.classList.contains('hr-wrap')){
+        e.preventDefault(); // don't delete the divider accidentally
+      }
+    }
+  }
+}
+['keyup','mouseup'].forEach(ev=>
+  document.addEventListener(ev,e=>{
+    if(e.target.closest&&e.target.closest('#editor'))syncFormatSelector();
+  })
+);
+function syncFormatSelector(){
+  const tag=(document.queryCommandValue('formatBlock')||'').toLowerCase();
+  const sel=document.getElementById('format-block');
+  const valid=['p','h1','h2','h3','blockquote'];
+  if(valid.includes(tag)){
+    const s=window.getSelection();
+    if(s&&s.rangeCount){
+      let node=s.getRangeAt(0).commonAncestorContainer;
+      const ed=document.getElementById('editor');
+      while(node&&node!==ed){
+        if(node.nodeType===1&&/^H[1-3]$/.test(node.tagName)){
+          sel.value=node.style.textAlign==='center'?tag+'-center':tag;return;
+        }
+        node=node.parentNode;
+      }
+    }
+    sel.value=tag;
+  }else{sel.value='p';}
+}
+
+// ═══════════════════════════════════
+//  IMAGE UPLOAD
+// ═══════════════════════════════════
+function triggerImageUpload(mode){
+  pendingInsertMode=mode||'solo';
+  document.getElementById('img-upload').click();
+}
+window.triggerImageUpload=triggerImageUpload;
+
+function insertImage(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    if(pendingInsertMode==='solo'){
+      insertSoloImage(ev.target.result,file.name);
+    }else{
+      insertImageTextBlock(ev.target.result,file.name,pendingInsertMode==='block-right');
+    }
+    scheduleSave();
+  };
+  reader.readAsDataURL(file);
+  event.target.value='';
+}
+
+// ── Solo image (original behaviour) ──
+function insertSoloImage(src,alt){
+  const shell=createImgShell(src,alt,300);
+  const para=document.createElement('p');
+  para.appendChild(shell);
+  insertAtCursor(para);
+  attachShellEvents(shell);
+  selectShell(shell);
+}
+
+// ── Side-by-side block ──
+function insertImageTextBlock(src,alt,imgOnRight){
+  const wrap=document.createElement('div');
+  wrap.className='itb-wrap';
+
+  const tbl=document.createElement('table');
+  tbl.className='img-text-block'+(imgOnRight?' img-right':'');
+  tbl.setAttribute('contenteditable','false');
+
+  const tbody=document.createElement('tbody');
+  const tr=document.createElement('tr');
+
+  const shell=createImgShell(src,alt,220);
+
+  const imgCell=document.createElement('td');
+  imgCell.className='itb-img-cell';
+  imgCell.style.width='220px';
+  imgCell.appendChild(shell);
+
+  const resizeCell=document.createElement('td');
+  resizeCell.className='itb-col-resize';
+
+  const txtCell=document.createElement('td');
+  txtCell.className='itb-txt-cell';
+  txtCell.setAttribute('contenteditable','true');
+
+  if(imgOnRight){
+    tr.appendChild(txtCell);tr.appendChild(resizeCell);tr.appendChild(imgCell);
+  }else{
+    tr.appendChild(imgCell);tr.appendChild(resizeCell);tr.appendChild(txtCell);
+  }
+  tbody.appendChild(tr);tbl.appendChild(tbody);
+
+  // Block-level controls
+  const controls=document.createElement('div');
+  controls.className='itb-controls';
+  controls.innerHTML=`
+    <button onclick="swapITBSides(this)" title="Flip image/text sides">⇄ Flip</button>
+    <div class="ctl-sep"></div>
+    <button class="danger" onclick="deleteITB(this)" title="Remove block">✕ Remove</button>`;
+
+  wrap.appendChild(controls);
+  wrap.appendChild(tbl);
+
+  insertAtCursor(wrap);
+  attachShellEvents(shell);
+  attachITBEvents(wrap);
+
+  // Place cursor in the text cell
+  setTimeout(()=>{
+    txtCell.focus();
+    const r=document.createRange();
+    r.selectNodeContents(txtCell);r.collapse(false);
+    const s=window.getSelection();s.removeAllRanges();s.addRange(r);
+  },30);
+}
+
+function insertAtCursor(node){
+  const editor=document.getElementById('editor');
+  editor.focus();
+  const sel=window.getSelection();
+  if(sel&&sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    range.collapse(false);
+    range.insertNode(node);
+    range.setStartAfter(node);range.setEndAfter(node);
+    sel.removeAllRanges();sel.addRange(range);
+  }else{
+    editor.appendChild(node);
+  }
+}
+
+// ═══════════════════════════════════
+//  IMAGE SHELL FACTORY
+// ═══════════════════════════════════
+function createImgShell(src,alt,width){
+  const shell=document.createElement('span');
+  shell.className='img-shell';
+  shell.setAttribute('contenteditable','false');
+
+  const img=document.createElement('img');
+  img.src=src;img.alt=alt||'';
+  img.style.width=width+'px';
+  img.setAttribute('draggable','false');
+  img.ondragstart=()=>false;
+  shell.appendChild(img);
+
+  ['nw','n','ne','w','e','sw','s','se'].forEach(dir=>{
+    const h=document.createElement('span');
+    h.className='rh '+dir;h.dataset.dir=dir;
+    shell.appendChild(h);
+  });
+  return shell;
+}
+
+// ═══════════════════════════════════
+//  SHELL EVENTS
+// ═══════════════════════════════════
+function attachShellEvents(shell){
+  shell.addEventListener('mousedown',function(e){
+    if(e.button!==0)return;
+    e.preventDefault();e.stopPropagation();
+    selectShell(shell);
+    if(e.target.classList.contains('rh')){
+      startResize(e,shell);
+    }else{
+      // Solo images can be moved; ITB images resize only
+      if(!shell.closest('.img-text-block')) startDrag(e,shell);
+    }
+  });
+  shell.addEventListener('dragstart',e=>e.preventDefault());
+  const img=shell.querySelector('img');
+  if(img){img.setAttribute('draggable','false');img.ondragstart=()=>false;}
+}
+
+function attachITBEvents(wrap){
+  const tbl=wrap.querySelector('.img-text-block');
+  if(!tbl)return;
+
+  // Focus/blur tracking for dashed border
+  const txtCell=tbl.querySelector('.itb-txt-cell');
+  if(txtCell){
+    txtCell.addEventListener('focus',()=>wrap.classList.add('focused'));
+    txtCell.addEventListener('blur',()=>setTimeout(()=>{
+      if(!wrap.contains(document.activeElement))wrap.classList.remove('focused');
+    },100));
+    // Save on text changes in the text cell
+    txtCell.addEventListener('input',()=>scheduleSave());
+  }
+
+  // Column resize drag
+  const resizeCell=tbl.querySelector('.itb-col-resize');
+  if(resizeCell){
+    resizeCell.addEventListener('mousedown',function(e){
+      if(e.button!==0)return;
+      e.preventDefault();e.stopPropagation();
+      startITBColResize(e,tbl);
+    });
+  }
+}
+
+// ═══════════════════════════════════
+//  SELECT / DESELECT SHELLS
+// ═══════════════════════════════════
+function selectShell(shell){
+  if(selectedShell&&selectedShell!==shell)selectedShell.classList.remove('selected');
+  selectedShell=shell;shell.classList.add('selected');
+  // Only show width toolbar for ITB shells (solo images use drag)
+  showImgToolbar(shell);
+}
+function deselect(){
+  if(selectedShell){selectedShell.classList.remove('selected');selectedShell=null;}
+  hideImgToolbar();
+}
+
+// ═══════════════════════════════════
+//  SOLO IMAGE DRAG (clamped)
+// ═══════════════════════════════════
+function startDrag(e,shell){
+  const editor=document.getElementById('editor');
+  const startX=e.clientX,startY=e.clientY;
+  const startML=parseFloat(shell.style.marginLeft)||0;
+  const startMT=parseFloat(shell.style.marginTop)||0;
+  document.body.style.userSelect='none';
+
+  function onMove(mv){
+    const dx=mv.clientX-startX,dy=mv.clientY-startY;
+    const edRect=editor.getBoundingClientRect();
+    const shellW=shell.offsetWidth,shellH=shell.offsetHeight;
+    const pad=44;
+    const newML=clamp(startML+dx,-pad+4,edRect.width-pad*2-shellW+4);
+    const newMT=clamp(startMT+dy,-20,editor.scrollHeight-shellH);
+    shell.style.marginLeft=newML+'px';shell.style.marginTop=newMT+'px';
+    positionImgToolbar(shell);
+  }
+  function onUp(){
+    document.body.style.userSelect='';
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    scheduleSave();
+  }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+// ═══════════════════════════════════
+//  IMAGE RESIZE
+// ═══════════════════════════════════
+function startResize(e,shell){
+  const img=shell.querySelector('img');
+  const dir=e.target.dataset.dir;
+  const startX=e.clientX,startY=e.clientY;
+  const startW=img.offsetWidth,startH=img.offsetHeight;
+  const aspect=startW/(startH||1);
+
+  // For ITB shells, max width is the img-cell width; for solo, editor inner width
+  const isITB=!!shell.closest('.img-text-block');
+  let maxW;
+  if(isITB){
+    const cell=shell.closest('.itb-img-cell');
+    maxW=cell?cell.offsetWidth-4:400;
+  }else{
+    const editor=document.getElementById('editor');
+    maxW=editor.clientWidth-88;
+  }
+  document.body.style.userSelect='none';
+
+  function onMove(mv){
+    const dx=mv.clientX-startX,dy=mv.clientY-startY;
+    let newW=startW;
+    if(dir.includes('e'))      newW=startW+dx;
+    else if(dir.includes('w')) newW=startW-dx;
+    else if(dir==='s')         newW=(startH+dy)*aspect;
+    else if(dir==='n')         newW=(startH-dy)*aspect;
+    newW=clamp(Math.round(newW),60,maxW);
+    img.style.width=newW+'px';img.style.height='';
+    document.getElementById('img-w-input').value=newW;
+    positionImgToolbar(shell);
+  }
+  function onUp(){
+    document.body.style.userSelect='';
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    scheduleSave();
+  }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+// ═══════════════════════════════════
+//  ITB COLUMN RESIZE (drag the divider)
+// ═══════════════════════════════════
+function startITBColResize(e,tbl){
+  const imgCell=tbl.querySelector('.itb-img-cell');
+  const startX=e.clientX;
+  const startW=imgCell.offsetWidth;
+  const isRight=tbl.classList.contains('img-right');
+  const totalW=tbl.offsetWidth;
+  document.body.style.userSelect='none';
+
+  function onMove(mv){
+    const dx=mv.clientX-startX;
+    let newW=isRight?startW-dx:startW+dx;
+    newW=clamp(Math.round(newW),80,totalW-80);
+    imgCell.style.width=newW+'px';
+    tbl.style.setProperty('--itb-img-w',newW+'px');
+    // Also resize the shell image to fit
+    const img=imgCell.querySelector('img');
+    if(img){img.style.width=(newW-16)+'px';}
+  }
+  function onUp(){
+    document.body.style.userSelect='';
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    scheduleSave();
+  }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+// ═══════════════════════════════════
+//  ITB CONTROLS
+// ═══════════════════════════════════
+function swapITBSides(btn){
+  const tbl=btn.closest('.itb-wrap').querySelector('.img-text-block');
+  if(!tbl)return;
+  const tr=tbl.querySelector('tr');
+  const cells=[...tr.children];
+  cells.reverse().forEach(c=>tr.appendChild(c));
+  tbl.classList.toggle('img-right');
+  scheduleSave();
+}
+function deleteITB(btn){
+  if(!confirm('Remove this image+text block?'))return;
+  const wrap=btn.closest('.itb-wrap');
+  if(wrap)wrap.remove();
+  scheduleSave();
+}
+window.swapITBSides=swapITBSides;
+window.deleteITB=deleteITB;
+
+// ═══════════════════════════════════
+//  IMAGE TOOLBAR (width input)
+// ═══════════════════════════════════
+const imgToolbar=document.getElementById('img-toolbar');
+const imgWInput=document.getElementById('img-w-input');
+imgWInput.addEventListener('change',function(){
+  if(!selectedShell)return;
+  const img=selectedShell.querySelector('img');
+  const w=parseInt(this.value);
+  if(w>0){img.style.width=w+'px';img.style.height='';}
+  scheduleSave();
+});
+imgWInput.addEventListener('keydown',e=>{if(e.key==='Enter')imgWInput.blur();});
+
+function showImgToolbar(shell){
+  const img=shell.querySelector('img');
+  imgWInput.value=Math.round(img.offsetWidth);
+  imgToolbar.classList.add('visible');
+  positionImgToolbar(shell);
+}
+function positionImgToolbar(shell){
+  const rect=shell.getBoundingClientRect();
+  const tbH=imgToolbar.offsetHeight||40;
+  let top=rect.top-tbH-8;
+  if(top<4)top=rect.bottom+8;
+  let left=rect.left;
+  const tbW=imgToolbar.offsetWidth||200;
+  if(left+tbW>window.innerWidth-8)left=window.innerWidth-tbW-8;
+  if(left<4)left=4;
+  imgToolbar.style.top=top+'px';imgToolbar.style.left=left+'px';
+}
+function hideImgToolbar(){imgToolbar.classList.remove('visible');}
+
+function deleteSelectedImg(){
+  if(!selectedShell)return;
+  if(!confirm('Remove this image?'))return;
+  const parent=selectedShell.parentElement;
+  selectedShell.remove();
+  if(parent&&parent.tagName==='P'&&parent.innerHTML.trim()==='')parent.remove();
+  selectedShell=null;hideImgToolbar();scheduleSave();
+}
+window.deleteSelectedImg=deleteSelectedImg;
+
+// Deselect shell on editor background click
+document.getElementById('editor').addEventListener('mousedown',function(e){
+  if(!e.target.closest('.img-shell'))deselect();
+});
+document.addEventListener('mousedown',function(e){
+  if(!e.target.closest('#editor')&&!e.target.closest('#img-toolbar'))deselect();
+});
+
+// ═══════════════════════════════════
+//  PDF EXPORT
+// ═══════════════════════════════════
+function exportPDF(){
+  const page=getPage(activeId);if(!page)return;
+  document.getElementById('pdf-overlay').classList.add('show');
+  const title=page.title||'Untitled';
+  const date=new Date(page.updated).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  const container=document.createElement('div');
+  container.style.cssText='font-family:Georgia,serif;padding:60px 70px;max-width:800px;color:#1a1714;background:#fff';
+  container.innerHTML=`
+    <div style="border-bottom:2px solid #2c5f2e;padding-bottom:18px;margin-bottom:32px">
+      <h1 style="font-size:34px;font-weight:700;margin:0 0 8px;color:#1a1714">${escHTML(title)}</h1>
+      <p style="font-size:13px;color:#888;margin:0">${date}</p>
+    </div>
+    <div style="font-size:15px;line-height:1.8;color:#1a1714">${page.content||'<p><em>Empty page</em></p>'}</div>
+    <div style="margin-top:60px;padding-top:14px;border-top:1px solid #e0dbd0;font-size:11px;color:#aaa;text-align:center">
+      Created with Pages · ${date}</div>`;
+  document.body.appendChild(container);
+  html2pdf().from(container).set({
+    margin:0,filename:(title||'Untitled')+'.pdf',
+    image:{type:'jpeg',quality:.97},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff'},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).save().finally(()=>{
+    document.body.removeChild(container);
+    document.getElementById('pdf-overlay').classList.remove('show');
+  });
+}
+window.exportPDF=exportPDF;
+
+// ═══════════════════════════════════
+//  DARK MODE
+// ═══════════════════════════════════
+const themeBtn=document.getElementById('theme-toggle');
+let isDark=localStorage.getItem('pages_theme')==='dark';
+applyTheme();
+themeBtn.addEventListener('click',()=>{
+  isDark=!isDark;localStorage.setItem('pages_theme',isDark?'dark':'light');applyTheme();
+});
+function applyTheme(){
+  document.body.dataset.theme=isDark?'dark':'light';
+  themeBtn.textContent=isDark?'☀️':'🌙';
+}
+
+// ═══════════════════════════════════
+//  SEARCH + INIT
+// ═══════════════════════════════════
+document.getElementById('search').addEventListener('input',function(){renderSidebar(this.value);});
+document.getElementById('new-page-btn').addEventListener('click',newPage);
+
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function escHTML(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function stripHTML(h){const d=document.createElement('div');d.innerHTML=h;return d.textContent||d.innerText||'';}
+
+loadPages();renderSidebar();
+if(pages.length===0)document.getElementById('no-pages').classList.add('visible');
+</script>
+</body>
+</html>
